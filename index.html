@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Comprimed-ZIP 1.0</title>
+<style>
+  :root{--bg:#1e1e2e;--fg:#cdd6f4;--accent:#89b4fa;--btn:#313244;--entry:#181825;}
+  body.winrar{--bg:#d4d0c8;--fg:#000;--accent:#0a246a;--btn:#e6e3db;--entry:#fff;}
+  body.sevenzip{--bg:#f0f0f0;--fg:#202020;--accent:#3a7bc8;--btn:#e6e6e6;--entry:#fff;}
+  *{box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif;}
+  body{margin:0;background:var(--bg);color:var(--fg);min-height:100vh;}
+  .header{padding:16px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(0,0,0,.2);}
+  .header h1{margin:0;color:var(--accent);font-size:22px;}
+  .tabs{display:flex;gap:4px;padding:8px 24px;flex-wrap:wrap;}
+  .tab{padding:8px 16px;background:var(--btn);color:var(--fg);border:0;border-radius:8px 8px 0 0;cursor:pointer;}
+  .tab.active{background:var(--accent);color:#fff;}
+  .panel{padding:24px;display:none;}
+  .panel.active{display:block;}
+  label{display:block;margin:12px 0 6px;font-weight:600;}
+  input,select{padding:8px;width:100%;max-width:520px;background:var(--entry);color:var(--fg);border:1px solid var(--btn);border-radius:6px;}
+  button.primary{margin-top:16px;padding:10px 18px;background:var(--accent);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;}
+  pre{background:var(--entry);padding:16px;border-radius:8px;white-space:pre-wrap;line-height:1.6;}
+  .small{opacity:.7;font-size:.9em;}
+</style>
+</head>
+<body class="comprimedzip">
+
+<div class="header">
+  <h1>Comprimed-ZIP</h1><span id="ver">v1.0</span>
+  <select id="langSelect" style="margin-left:auto;width:auto;"></select>
+  <select id="styleSelect" style="width:auto;">
+    <option value="comprimedzip">Comprimed-ZIP</option>
+    <option value="winrar">WinRAR</option>
+    <option value="sevenzip">7-Zip</option>
+  </select>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-panel="compress" data-i18n="compress_tab">Comprimir</button>
+  <button class="tab" data-panel="convert" data-i18n="convert_tab">Convertir</button>
+  <button class="tab" data-panel="czip" data-i18n="czip_tab">Archivo .czip</button>
+  <button class="tab" data-panel="settings" data-i18n="settings_tab">Ajustes</button>
+  <button class="tab" data-panel="about" data-i18n="about_tab">Acerca de</button>
+</div>
+
+<div class="panel active" id="panel-compress">
+  <label data-i18n="input">Archivo de entrada</label><input type="file" id="cfile">
+  <label data-i18n="level">Nivel (0-9)</label><input type="number" id="level" value="9" min="0" max="9">
+  <button class="primary" id="btnCompress">Comprimir</button>
+</div>
+
+<div class="panel" id="panel-convert">
+  <label data-i18n="input">Archivo de entrada</label><input type="file" id="vfile">
+  <label data-i18n="target_format">Formato de destino</label>
+  <select id="vtarget"><option>.txt</option><option>.md</option><option>.json</option><option>.html</option></select>
+  <button class="primary" id="btnConvert">Convertir</button>
+</div>
+
+<div class="panel" id="panel-czip">
+  <p data-i18n="czip_note">El formato .czip cifra tu archivo con PBKDF2 + SHA-256 + HMAC (versión de escritorio).</p>
+</div>
+
+<div class="panel" id="panel-settings">
+  <p data-i18n="settings_note">Usa los selectores superiores para cambiar idioma y estilo de forma inmediata.</p>
+</div>
+
+<div class="panel" id="panel-about">
+  <pre id="aboutText"></pre>
+</div>
+
+<script>
+const I18N = {
+  "Español":{"compress_tab":"Comprimir","convert_tab":"Convertir","czip_tab":"Archivo .czip","settings_tab":"Ajustes","about_tab":"Acerca de","input":"Archivo de entrada","level":"Nivel de compresión","target_format":"Formato de destino","czip_note":"El formato .czip cifra tu archivo con PBKDF2 + SHA-256 + HMAC.","settings_note":"Usa los selectores superiores para cambiar idioma y estilo.","about":"# Comprimed-ZIP\n\nUn compresor de archivos gratuito\n\nVersion: 1.0\n\nIdioma: {lang}\n\n> David© - Comprimed-ZIP  2026"},
+  "English":{"compress_tab":"Compress","convert_tab":"Convert","czip_tab":".czip File","settings_tab":"Settings","about_tab":"About","input":"Input file","level":"Compression level","target_format":"Target format","czip_note":"The .czip format encrypts with PBKDF2 + SHA-256 + HMAC.","settings_note":"Use the selectors above to switch language and style.","about":"# Comprimed-ZIP\n\nA free file compressor\n\nVersion: 1.0\n\nLanguage: {lang}\n\n> David© - Comprimed-ZIP  2026"},
+  "Français":{"compress_tab":"Compresser","convert_tab":"Convertir","czip_tab":"Fichier .czip","settings_tab":"Paramètres","about_tab":"À propos","input":"Fichier d'entrée","level":"Niveau","target_format":"Format cible","czip_note":"Le format .czip chiffre avec PBKDF2 + SHA-256 + HMAC.","settings_note":"Utilisez les sélecteurs ci-dessus.","about":"# Comprimed-ZIP\n\nUn compresseur de fichiers gratuit\n\nVersion: 1.0\n\nLangue : {lang}\n\n> David© - Comprimed-ZIP  2026"},
+  "Deutsch":{"compress_tab":"Komprimieren","convert_tab":"Konvertieren","czip_tab":".czip-Datei","settings_tab":"Einstellungen","about_tab":"Über","input":"Eingabedatei","level":"Komprimierungsstufe","target_format":"Zielformat","czip_note":"Das .czip-Format verschlüsselt mit PBKDF2 + SHA-256 + HMAC.","settings_note":"Verwenden Sie die Auswahl oben.","about":"# Comprimed-ZIP\n\nEin kostenloser Dateikompressor\n\nVersion: 1.0\n\nSprache: {lang}\n\n> David© - Comprimed-ZIP  2026"},
+  "Italiano":{"compress_tab":"Comprimi","convert_tab":"Converti","czip_tab":"File .czip","settings_tab":"Impostazioni","about_tab":"Informazioni","input":"File di input","level":"Livello","target_format":"Formato di destinazione","czip_note":"Il formato .czip crittografa con PBKDF2 + SHA-256 + HMAC.","settings_note":"Usa i selettori in alto.","about":"# Comprimed-ZIP\n\nUn compressore di file gratuito\n\nVersion: 1.0\n\nLingua: {lang}\n\n> David© - Comprimed-ZIP  2026"},
+  "Português":{"compress_tab":"Comprimir","convert_tab":"Converter","czip_tab":"Arquivo .czip","settings_tab":"Configurações","about_tab":"Sobre","input":"Arquivo de entrada","level":"Nível","target_format":"Formato de destino","czip_note":"O formato .czip criptografa com PBKDF2 + SHA-256 + HMAC.","settings_note":"Use os seletores acima.","about":"# Comprimed-ZIP\n\nUm compressor de arquivos gratuito\n\nVersion: 1.0\n\nIdioma: {lang}\n\n> David© - Comprimed-ZIP  2026"},
+  "Русский":{"compress_tab":"Сжать","convert_tab":"Конвертировать","czip_tab":"Файл .czip","settings_tab":"Настройки","about_tab":"О программе","input":"Входной файл","level":"Уровень сжатия","target_format":"Целевой формат","czip_note":"Формат .czip шифруется PBKDF2 + SHA-256 + HMAC.","settings_note":"Используйте выбор выше.","about":"# Comprimed-ZIP\n\nБесплатный компрессор файлов\n\nVersion: 1.0\n\nЯзык: {lang}\n\n> David© - Comprimed-ZIP  2026"},
+  "中文":{"compress_tab":"压缩","convert_tab":"转换","czip_tab":".czip 文件","settings_tab":"设置","about_tab":"关于","input":"输入文件","level":"压缩级别","target_format":"目标格式","czip_note":".czip 格式使用 PBKDF2 + SHA-256 + HMAC 加密。","settings_note":"使用上方选择器切换语言和风格。","about":"# Comprimed-ZIP\n\n免费文件压缩器\n\nVersion: 1.0\n\n语言: {lang}\n\n> David© - Comprimed-ZIP  2026"},
+  "日本語":{"compress_tab":"圧縮","convert_tab":"変換","czip_tab":".czip ファイル","settings_tab":"設定","about_tab":"情報","input":"入力ファイル","level":"圧縮レベル","target_format":"変換先の形式","czip_note":".czip は PBKDF2 + SHA-256 + HMAC で暗号化します。","settings_note":"上のセレクターで言語とスタイルを切り替え。","about":"# Comprimed-ZIP\n\n無料のファイル圧縮ツール\n\nVersion: 1.0\n\n言語: {lang}\n\n> David© - Comprimed-ZIP  2026"},
+  "العربية":{"compress_tab":"ضغط","convert_tab":"تحويل","czip_tab":"ملف .czip","settings_tab":"الإعدادات","about_tab":"حول","input":"ملف الإدخال","level":"مستوى الضغط","target_format":"التنسيق الهدف","czip_note":"صيغة .czip تُشفّر باستخدام PBKDF2 + SHA-256 + HMAC.","settings_note":"استخدم المحددات أعلاه.","about":"# Comprimed-ZIP\n\nضاغط ملفات مجاني\n\nVersion: 1.0\n\nاللغة: {lang}\n\n> David© - Comprimed-ZIP  2026"}
+};
+const langs = Object.keys(I18N);
+let currentLang = "Español";
+let currentStyle = "comprimedzip";
+
+const langSel = document.getElementById("langSelect");
+langs.forEach(l => { const o = document.createElement("option"); o.value=o.textContent=l; langSel.appendChild(o); });
+langSel.value = currentLang;
+
+function applyLang() {
+  const t = I18N[currentLang];
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (t[key]) el.textContent = t[key];
+  });
+  document.getElementById("aboutText").textContent = t.about.replace("{lang}", currentLang);
+}
+applyLang();
+
+langSel.onchange = () => { currentLang = langSel.value; applyLang(); };
+document.getElementById("styleSelect").onchange = (e) => {
+  currentStyle = e.target.value;
+  document.body.className = currentStyle;
+};
+document.querySelectorAll(".tab").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-" + btn.dataset.panel).classList.add("active");
+  };
+});
+// Compresión real en el navegador
+document.getElementById("btnCompress").onclick = async () => {
+  const f = document.getElementById("cfile").files[0];
+  if (!f) return alert(I18N[currentLang].input);
+  const level = parseInt(document.getElementById("level").value) || 9;
+  try {
+    const stream = f.stream().pipeThrough(new CompressionStream("gzip"));
+    const blob = await new Response(stream).blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = f.name + ".gz"; a.click();
+    URL.revokeObjectURL(url);
+    alert("OK " + f.size + " → " + blob.size + " bytes");
+  } catch (e) { alert("Error: " + e); }
+};
+document.getElementById("btnConvert").onclick = async () => {
+  const f = document.getElementById("vfile").files[0];
+  if (!f) return;
+  const target = document.getElementById("vtarget").value;
+  const text = await f.text();
+  let out = text;
+  if (target === ".html") out = "<!DOCTYPE html><meta charset='utf-8'><pre>" + text.replace(/&/g,"&amp;").replace(/</g,"&lt;") + "</pre>";
+  if (target === ".json") out = JSON.stringify({content:text}, null, 2);
+  const blob = new Blob([out], {type:"text/plain"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = f.name.replace(/\.[^.]+$/, "") + target; a.click();
+};
+</script>
+</body>
+</html>
